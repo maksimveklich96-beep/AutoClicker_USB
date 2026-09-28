@@ -22,6 +22,8 @@
 #include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
+#include "Clicker.h"
+#include "usbd_hid.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,6 +61,8 @@ void MX_FREERTOS_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+clicker_info curr_clicker;
+
 /* USER CODE END 0 */
 
 /**
@@ -93,11 +97,14 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  Clicker_ctor(&curr_clicker, 0, 0, 8U);
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
+
 
   /* Start scheduler */
   osKernelStart();

@@ -22,6 +22,9 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "Clicker.h"
+#include "usb_device.h"
+#include "usbd_hid.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,6 +49,9 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
+extern clicker_info curr_clicker;
+extern USBD_HandleTypeDef hUsbDeviceFS;
+
 osThreadId_t ButtonHandle;
 
 const osThreadAttr_t ButtonTask_attributes = {
@@ -54,7 +60,8 @@ const osThreadAttr_t ButtonTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
-volatile uint8_t is_clicking = 0;
+uint8_t pressed_on_array[4] = {0x01, 0, 0, 0};
+uint8_t pressed_off_array[4] = {0x00, 0, 0, 0};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -130,13 +137,23 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
+  uint8_t button_pressed = 0;
   for(;;)
   {
 	  if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET))
 	  {
-		  is_clicking = (1 << 0);
+		  if (button_pressed == 0)
+		  {
+			  button_pressed = 1;
+			  curr_clicker.on_flag = !curr_clicker.on_flag;
+		  	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		  }
 	  }
-	  osDelay(1);
+	  else
+	  {
+		button_pressed = 0;
+	  }
+	  osDelay(20);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -145,12 +162,25 @@ void StartDefaultTask(void *argument)
 /* USER CODE BEGIN Application */
 void StartButtonTask(void *argument)
 {
-  // Убрали инициализацию USB, она тут не нужна
 
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1); // Пока просто спим 1 мс
+    if (curr_clicker.on_flag != 0) {
+
+	    while (USBD_HID_SendReport(&hUsbDeviceFS, pressed_on_array, 4) == USBD_BUSY) {
+	    	osDelay(1);
+	    }
+	    osDelay(curr_clicker.clicks_per_ms);
+
+	    while (USBD_HID_SendReport(&hUsbDeviceFS, pressed_off_array, 4) == USBD_BUSY) {
+	    	osDelay(1);
+	    }
+	    osDelay(curr_clicker.clicks_per_ms);
+    } else {
+
+	    osDelay(10);
+	}
   }
 }
 
