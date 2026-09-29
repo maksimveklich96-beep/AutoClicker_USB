@@ -19,14 +19,15 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "i2c.h"
 #include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
-#include "Clicker.h"
-#include "usbd_hid.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "Clicker.h"
 
 /* USER CODE END Includes */
 
@@ -95,6 +96,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   Clicker_ctor(&curr_clicker, 0, 0, 8U);
@@ -104,7 +106,6 @@ int main(void)
   /* Init scheduler */
   osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
-
 
   /* Start scheduler */
   osKernelStart();

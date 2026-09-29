@@ -22,12 +22,15 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-#include "Clicker.h"
-#include "usb_device.h"
-#include "usbd_hid.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "Clicker.h"
+#include "usb_device.h"
+#include "usbd_hid.h"
+#include "i2c.h"
+#include "ssd1306.h"
 
 /* USER CODE END Includes */
 
@@ -60,6 +63,14 @@ const osThreadAttr_t ButtonTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
+osThreadId_t DisplayHandle;
+
+const osThreadAttr_t DisplayTask_attributes = {
+  .name = "DisplayTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+
 uint8_t pressed_on_array[4] = {0x01, 0, 0, 0};
 uint8_t pressed_off_array[4] = {0x00, 0, 0, 0};
 
@@ -76,6 +87,8 @@ const osThreadAttr_t defaultTask_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 
 void StartButtonTask(void *argument);
+
+void StartDisplayTask(void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -113,8 +126,11 @@ void MX_FREERTOS_Init(void) {
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   ButtonHandle = osThreadNew(StartButtonTask, NULL, &ButtonTask_attributes);
+
+  DisplayHandle = osThreadNew(StartDisplayTask, NULL, &DisplayTask_attributes);
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -176,12 +192,46 @@ void StartButtonTask(void *argument)
 	    while (USBD_HID_SendReport(&hUsbDeviceFS, pressed_off_array, 4) == USBD_BUSY) {
 	    	osDelay(1);
 	    }
+	    ++curr_clicker.clicks_num;
 	    osDelay(curr_clicker.clicks_per_ms);
     } else {
 
 	    osDelay(10);
 	}
   }
+}
+
+void StartDisplayTask(void *argument)
+{
+	char str_buf[16];
+	ssd1306_Init(&hi2c1);
+	ssd1306_Fill(Black);
+	ssd1306_UpdateScreen(&hi2c1);
+	for(;;)
+	{
+		if (curr_clicker.on_flag != 0)
+		{	ssd1306_Fill(White);
+			ssd1306_SetCursor(25, 4);
+			ssd1306_WriteString("Autoclicker", Font_7x10, Black);
+			ssd1306_SetCursor(0, 18);
+			ssd1306_WriteString("State: turned on", Font_7x10, Black);
+			ssd1306_SetCursor(0, 34);
+			ssd1306_WriteString("Clicks made:", Font_7x10, Black);
+			snprintf(str_buf, sizeof(str_buf), "%lu", curr_clicker.clicks_num);
+			ssd1306_WriteString(str_buf, Font_7x10, Black);
+			ssd1306_SetCursor(0, 48);
+			ssd1306_WriteString("Frequency(ms): ", Font_7x10, Black);
+			snprintf(str_buf, sizeof(str_buf), "%lu",curr_clicker.clicks_per_ms);
+			ssd1306_WriteString(str_buf, Font_7x10, Black);
+			ssd1306_UpdateScreen(&hi2c1);
+			osDelay(100);
+		}
+		else
+		{
+			ssd1306_Fill(Black);
+			ssd1306_UpdateScreen(&hi2c1);
+		}
+	}
 }
 
 /* USER CODE END Application */
