@@ -29,7 +29,7 @@ It features an OLED display for real-time status monitoring, driven by a fault-t
 | **Status LED** | `PA5` | Toggles state alongside the clicker |
 | **USB D+ / D-** | `PA12` / `PA11` | USB FS pins to host PC |
 
-Also, there is a pinout preview, showing the all essential information.
+Below is a pinout diagram for quick reference.
 
 <img width="849" height="661" alt="{E7BBC238-168E-4F3D-92C5-83555F1C1D26}" src="https://github.com/user-attachments/assets/c8df8b23-d4b6-4c71-80e2-245c47408172" />
 
