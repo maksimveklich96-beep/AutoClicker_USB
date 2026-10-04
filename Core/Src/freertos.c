@@ -31,6 +31,7 @@
 #include "usbd_hid.h"
 #include "i2c.h"
 #include "ssd1306.h"
+#include "Display_state_machine.h"
 
 /* USER CODE END Includes */
 
@@ -52,8 +53,10 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
+extern uint8_t address;
 extern clicker_info curr_clicker;
 extern USBD_HandleTypeDef hUsbDeviceFS;
+extern DisplayState display;
 
 osThreadId_t ButtonHandle;
 
@@ -203,34 +206,10 @@ void StartButtonTask(void *argument)
 
 void StartDisplayTask(void *argument)
 {
-	char str_buf[16];
-	ssd1306_Init(&hi2c1);
-	ssd1306_Fill(Black);
-	ssd1306_UpdateScreen(&hi2c1);
 	for(;;)
 	{
-		if (curr_clicker.on_flag != 0)
-		{	ssd1306_Fill(White);
-			ssd1306_SetCursor(25, 4);
-			ssd1306_WriteString("Autoclicker", Font_7x10, Black);
-			ssd1306_SetCursor(0, 18);
-			ssd1306_WriteString("State: turned on", Font_7x10, Black);
-			ssd1306_SetCursor(0, 34);
-			ssd1306_WriteString("Clicks made:", Font_7x10, Black);
-			snprintf(str_buf, sizeof(str_buf), "%lu", curr_clicker.clicks_num);
-			ssd1306_WriteString(str_buf, Font_7x10, Black);
-			ssd1306_SetCursor(0, 48);
-			ssd1306_WriteString("Frequency(ms): ", Font_7x10, Black);
-			snprintf(str_buf, sizeof(str_buf), "%lu",curr_clicker.clicks_per_ms);
-			ssd1306_WriteString(str_buf, Font_7x10, Black);
-			ssd1306_UpdateScreen(&hi2c1);
-			osDelay(100);
-		}
-		else
-		{
-			ssd1306_Fill(Black);
-			ssd1306_UpdateScreen(&hi2c1);
-		}
+		Control_Display(address, curr_clicker.on_flag);
+		osDelay(100);
 	}
 }
 

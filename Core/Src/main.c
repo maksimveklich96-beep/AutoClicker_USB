@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "Clicker.h"
+#include "Display_state_machine.h"
 
 /* USER CODE END Includes */
 
@@ -64,6 +65,9 @@ void MX_FREERTOS_Init(void);
 
 clicker_info curr_clicker;
 
+DisplayState display = Display_is_rebooting;
+uint8_t address;
+
 /* USER CODE END 0 */
 
 /**
@@ -98,6 +102,23 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
+  	  // Finding the address of the LED Display
+  HAL_StatusTypeDef stat;
+  for (int i = 0; i < 127; ++i)
+  {
+	  address = (i << 1);
+	  stat = HAL_I2C_IsDeviceReady(&hi2c1, address, 1, 10);
+	  if (stat == HAL_OK)
+	  {
+		  break;
+	  }
+  }
+
+  	  // Call the Display function once
+  	  // Initialize the display
+  Control_Display(address, 1);
+
 
   Clicker_ctor(&curr_clicker, 0, 0, 8U);
 
