@@ -120,7 +120,7 @@ int main(void)
   Control_Display(address, 1);
 
 
-  Clicker_ctor(&curr_clicker, 0, 0, 8U);
+  Clicker_ctor(&curr_clicker, 0, 0, 8U, 0);
 
   /* USER CODE END 2 */
 

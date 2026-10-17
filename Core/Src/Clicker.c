@@ -11,8 +11,11 @@
 void Clicker_ctor(clicker_info * const me,
 		uint32_t clicks_num,
 		volatile uint8_t on_flag,
-		uint32_t clicks_per_ms) {
+		uint32_t clicks_per_ms,
+		uint8_t prev_state) {
 	me->clicks_num = clicks_num;
 	me->on_flag = on_flag;
 	me->clicks_per_ms = clicks_per_ms;
+	me->prev_state = prev_state;
+
 }

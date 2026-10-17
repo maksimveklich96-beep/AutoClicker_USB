@@ -152,27 +152,61 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  uint8_t button_pressed = 0;
-  for(;;)
-  {
-	  if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET))
-	  {
-		  if (button_pressed == 0)
-		  {
-			  button_pressed = 1;
-			  curr_clicker.on_flag = !curr_clicker.on_flag;
-		  	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		  }
-	  }
-	  else
-	  {
+	/* init code for USB_DEVICE */
+	MX_USB_DEVICE_Init();
+	/* USER CODE BEGIN StartDefaultTask */
+	/* Infinite loop */
+	uint8_t button_pressed = 0;
+	uint8_t long_click = 0;
+	uint32_t init_time;
+	for(;;)
+	{
+		if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET))
+		{
+			if (button_pressed == 0)
+			{
+				long_click = 0;
+				button_pressed = 1;
+				init_time = osKernelGetTickCount();
+			}
+			else if (button_pressed == 1)
+			{
+				if (((osKernelGetTickCount() - init_time) > 1000) && long_click == 0)
+				{
+					if (display == Display_is_fine)
+					{
+						display = Display_is_configuring;
+						curr_clicker.on_flag = 0;
+						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+					}
+					else if (display == Display_is_configuring)
+					{
+						display = Display_is_fine;
+						curr_clicker.on_flag = curr_clicker.prev_state;
+						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, curr_clicker.prev_state);
+					}
+					long_click = 1;
+				}
+			}
+		}
+	else
+	{
+		if (button_pressed == 1)
+		{
+			if (display == Display_is_configuring && long_click == 0)
+			{
+				next_speed(&curr_clicker);
+			}
+			else if (display == Display_is_fine && long_click == 0)
+			{
+				curr_clicker.on_flag = !curr_clicker.on_flag;
+				curr_clicker.prev_state = curr_clicker.on_flag;
+				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+			}
+		}
 		button_pressed = 0;
-	  }
-	  osDelay(20);
+	}
+	osDelay(20);
   }
   /* USER CODE END StartDefaultTask */
 }
