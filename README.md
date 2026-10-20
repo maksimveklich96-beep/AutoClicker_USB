@@ -44,6 +44,23 @@ Total bus failure (HardFault/Deadlock) is a common problem, it happens when an I
 2. **State Segregation:** If the ping fails, the display task safely falls back to a `Display_is_lost` state, yielding processor time back to the USB clicker task.
 3. **Safe Reboot:** Upon physical reconnection, the FSM implements software debouncing and gracefully re-initializes the SSD1306 registers (`Display_is_rebooting`) before resuming frame updates.
 
+### Update about the software
+
+1. Bus Failure Fix: Added hot-plug support and error recovery for the I2C display. Previously, disconnecting the wires caused a bus failure, leaving the display unresponsive until a hard reset. The firmware now handles peripheral loss gracefully by dynamically reinitializing the I2C bus and clearing error states upon reconnection.
+
+https://github.com/user-attachments/assets/720ee3b2-bd3d-4ead-9ef9-f69026acc6fa
+
+2. Idle Screen: Serves as an on-board quick guide, providing the user with clear operational instructions.
+
+<img width="1126" height="1000" alt="image" src="https://github.com/user-attachments/assets/41b1caa1-723f-422f-b63e-8fced014dc3f" />
+
+3. Configuration Menu: Enables on-the-fly click frequency adjustments. UI navigation is handled via a single physical button: a short press cycles through available speeds, while a long press toggles between the menu and the active state.
+
+<img width="1249" height="1000" alt="image" src="https://github.com/user-attachments/assets/b3f4008c-f54a-4056-a71e-3f000b6a554f" />
+
+4. State Memory Implementation: The firmware now features a memento pattern to store the previous operational state. If the user enters the configuration menu while the autoclicker is active, the device will automatically resume sending HID reports upon exiting. If the device was paused beforehand, it gracefully remains in the idle state after configuration.
+
+
 ## Build & Flash
 
 1. Clone this repository.
@@ -58,4 +75,4 @@ Total bus failure (HardFault/Deadlock) is a common problem, it happens when an I
 - [x] FreeRTOS integration
 - [x] OLED Status Display
 - [x] I2C Hot-plug protection and State Machine
-- [ ] UI/Button logic to adjust click frequency on the fly
+- [x] UI/Button logic to adjust click frequency on the fly
