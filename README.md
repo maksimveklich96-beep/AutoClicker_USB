@@ -61,6 +61,7 @@ https://github.com/user-attachments/assets/720ee3b2-bd3d-4ead-9ef9-f69026acc6fa
 4. State Memory Implementation: The firmware now features a memento pattern to store the previous operational state. If the user enters the configuration menu while the autoclicker is active, the device will automatically resume sending HID reports upon exiting. If the device was paused beforehand, it gracefully remains in the idle state after configuration.
 
 
+
 ## Build & Flash
 
 1. Clone this repository.
