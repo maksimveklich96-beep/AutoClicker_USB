@@ -11,3 +11,5 @@ Release/
 
 .DS_Store
 Thumbs.db
+
+.metadata/
