@@ -26,12 +26,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "Clicker.h"
 #include "usb_device.h"
 #include "usbd_hid.h"
 #include "i2c.h"
 #include "ssd1306.h"
-#include "Display_state_machine.h"
 
 /* USER CODE END Includes */
 
@@ -54,28 +52,10 @@
 /* USER CODE BEGIN Variables */
 
 extern uint8_t address;
-extern clicker_info curr_clicker;
+
 extern USBD_HandleTypeDef hUsbDeviceFS;
-extern DisplayState display;
-
-osThreadId_t ButtonHandle;
-
-const osThreadAttr_t ButtonTask_attributes = {
-  .name = "buttonTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 
 osThreadId_t DisplayHandle;
-
-const osThreadAttr_t DisplayTask_attributes = {
-  .name = "DisplayTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-
-uint8_t pressed_on_array[4] = {0x01, 0, 0, 0};
-uint8_t pressed_off_array[4] = {0x00, 0, 0, 0};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -131,9 +111,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  ButtonHandle = osThreadNew(StartButtonTask, NULL, &ButtonTask_attributes);
 
-  DisplayHandle = osThreadNew(StartDisplayTask, NULL, &DisplayTask_attributes);
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -155,97 +133,13 @@ void StartDefaultTask(void *argument)
 	/* init code for USB_DEVICE */
 	MX_USB_DEVICE_Init();
 	/* USER CODE BEGIN StartDefaultTask */
-	/* Infinite loop */
-	uint8_t button_pressed = 0;
-	uint8_t long_click = 0;
-	uint32_t init_time;
-	for(;;)
-	{
-		if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET))
-		{
-			if (button_pressed == 0)
-			{
-				long_click = 0;
-				button_pressed = 1;
-				init_time = osKernelGetTickCount();
-			}
-			else if (button_pressed == 1)
-			{
-				if (((osKernelGetTickCount() - init_time) > 1000) && long_click == 0)
-				{
-					if (display == Display_is_fine)
-					{
-						display = Display_is_configuring;
-						curr_clicker.on_flag = 0;
-						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-					}
-					else if (display == Display_is_configuring)
-					{
-						display = Display_is_fine;
-						curr_clicker.on_flag = curr_clicker.prev_state;
-						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, curr_clicker.prev_state);
-					}
-					long_click = 1;
-				}
-			}
-		}
-	else
-	{
-		if (button_pressed == 1)
-		{
-			if (display == Display_is_configuring && long_click == 0)
-			{
-				next_speed(&curr_clicker);
-			}
-			else if (display == Display_is_fine && long_click == 0)
-			{
-				curr_clicker.on_flag = !curr_clicker.on_flag;
-				curr_clicker.prev_state = curr_clicker.on_flag;
-				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-			}
-		}
-		button_pressed = 0;
-	}
-	osDelay(20);
-  }
+	vTaskDelete(NULL);
   /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void StartButtonTask(void *argument)
-{
 
-  /* Infinite loop */
-  for(;;)
-  {
-    if (curr_clicker.on_flag != 0) {
-
-	    while (USBD_HID_SendReport(&hUsbDeviceFS, pressed_on_array, 4) == USBD_BUSY) {
-	    	osDelay(1);
-	    }
-	    osDelay(curr_clicker.clicks_per_ms);
-
-	    while (USBD_HID_SendReport(&hUsbDeviceFS, pressed_off_array, 4) == USBD_BUSY) {
-	    	osDelay(1);
-	    }
-	    ++curr_clicker.clicks_num;
-	    osDelay(curr_clicker.clicks_per_ms);
-    } else {
-
-	    osDelay(10);
-	}
-  }
-}
-
-void StartDisplayTask(void *argument)
-{
-	for(;;)
-	{
-		Control_Display(address, curr_clicker.on_flag);
-		osDelay(100);
-	}
-}
 
 /* USER CODE END Application */
 
